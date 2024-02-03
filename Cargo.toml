@@ -1,0 +1,23 @@
+[package]
+name = "zaemon_bot"
+description = "An Inline Sticker Generator Bot."
+version = "0.1.0"
+authors = ["blackksheepp"]
+rust-version = "1.75"
+target="src/main.rs"
+edition="2021"
+
+[dependencies]
+dotenv = "0.15.0"
+log = "0.4.20"
+env_logger = "0.11.0"
+teloxide = { version = "0.12.2", features = ["macros"] }
+pretty_env_logger = "0.4"
+tokio = { version =  "1.8", features = ["full"] }
+textwrap = "0.16"
+magick_rust = "0.19.1"
+indexmap = "2.2.1"
+
+[dependencies.mongodb]
+version = "2.8.0"
+features = ["tokio-runtime"]
