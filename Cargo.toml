@@ -6,9 +6,11 @@ authors = ["blackksheepp"]
 rust-version = "1.75"
 edition="2021"
 
+
 [[bin]]
 name = "zaemon_bot"
 path = "src/main.rs"
+
 
 [dependencies]
 dotenv = "0.15.0"

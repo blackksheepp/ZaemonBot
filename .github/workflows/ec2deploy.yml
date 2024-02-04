@@ -1,0 +1,86 @@
+name: Build on DockerHub and Deploy to AWS
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+
+env:
+  DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+  DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+  AWS_PRIVATE_KEY: ${{ secrets.AWS_PRIVATE_KEY }}
+  AWS_HOST: ${{ secrets.AWS_HOST }}
+  REPO: ${{ secrets.REPO }}
+
+jobs:
+  build:
+    environment: production
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ env.DOCKERHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./
+          push: true
+          dockerfile: ./Dockerfile
+          tags: ${{ env.DOCKERHUB_USERNAME }}/${{ env.REPO }}:latest
+          build-args: |
+            "ENV_PREFIX=${ENV_PREFIX}"
+            "ZAEMON_MONGODB_URI=${ZAEMON_MONGODB_URI}"
+            "ZAEMON_DB_NAME=${ZAEMON_DB_NAME}"
+            "ZAEMON_BOT_TOKEN=${ZAEMON_BOT_TOKEN}"
+
+  deploy:
+    needs: build
+    environment: production
+    runs-on: ubuntu-latest
+
+    env:
+      ENV_PREFIX: ${{ secrets.ENV_PREFIX }}
+      ZAEMON_MONGODB_URI: ${{ secrets.ZAEMON_MONGODB_URI }}
+      ZAEMON_DB_NAME: ${{ secrets.ZAEMON_DB_NAME }}
+      ZAEMON_BOT_TOKEN: ${{ secrets.ZAEMON_BOT_TOKEN }}
+      
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ env.DOCKERHUB_TOKEN }}
+      
+      - name: Set permissions for private key
+        run: |
+          echo "${{ env.AWS_PRIVATE_KEY }}" > key.pem
+          chmod 600 key.pem
+
+      - name: Pull Docker Image
+        run: |
+          ssh -o StrictHostKeyChecking=no -i key.pem ${{ env.AWS_HOST }} 'docker rmi -f $(docker images -aq)'
+          ssh -o StrictHostKeyChecking=no -i key.pem ${{ env.AWS_HOST }} 'docker pull ${{ env.DOCKERHUB_USERNAME }}/${{ env.REPO }}:latest'
+
+      - name: Stop running container
+        run: |
+          ssh -o StrictHostKeyChecking=no -i key.pem ${{ env.AWS_HOST }} 'docker stop ${{ env.REPO }} || true'
+          ssh -o StrictHostKeyChecking=no -i key.pem ${{ env.AWS_HOST }} 'docker rm ${{ env.REPO }} || true'
+
+      - name: Run new container
+        run: |
+          ssh -o StrictHostKeyChecking=no -i key.pem ${{ env.AWS_HOST }} 'docker run -d --name ${{ env.REPO }} --env ENV_PREFIX="${{ env.ENV_PREFIX }}" --env ZAEMON_MONGODB_URI="${{ env.ZAEMON_MONGODB_URI }}" --env ZAEMON_DB_NAME="${{ env.ZAEMON_DB_NAME }}" --env ZAEMON_BOT_TOKEN="${{ env.ZAEMON_BOT_TOKEN }}" ${{ env.DOCKERHUB_USERNAME }}/${{ env.REPO }}:latest'
+                
