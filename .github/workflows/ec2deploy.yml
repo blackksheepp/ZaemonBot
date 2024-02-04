@@ -38,11 +38,6 @@ jobs:
           push: true
           dockerfile: ./Dockerfile
           tags: ${{ env.DOCKERHUB_USERNAME }}/${{ env.REPO }}:latest
-          build-args: |
-            "ENV_PREFIX=${ENV_PREFIX}"
-            "ZAEMON_MONGODB_URI=${ZAEMON_MONGODB_URI}"
-            "ZAEMON_DB_NAME=${ZAEMON_DB_NAME}"
-            "ZAEMON_BOT_TOKEN=${ZAEMON_BOT_TOKEN}"
 
   deploy:
     needs: build
@@ -72,7 +67,7 @@ jobs:
 
       - name: Pull Docker Image
         run: |
-          ssh -o StrictHostKeyChecking=no -i key.pem ${{ env.AWS_HOST }} 'docker rmi -f $(docker images -aq)'
+          ssh -o StrictHostKeyChecking=no -i key.pem ${{ env.AWS_HOST }} 'docker rmi -f $(docker images ${{ env.DOCKERHUB_USERNAME }}/${{ env.REPO }} -aq)'
           ssh -o StrictHostKeyChecking=no -i key.pem ${{ env.AWS_HOST }} 'docker pull ${{ env.DOCKERHUB_USERNAME }}/${{ env.REPO }}:latest'
 
       - name: Stop running container

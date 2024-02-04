@@ -5,6 +5,7 @@ version = "0.1.0"
 authors = ["blackksheepp"]
 rust-version = "1.75"
 edition="2021"
+target="src/main.rs"
 
 [[bin]]
 name = "zaemon_bot"

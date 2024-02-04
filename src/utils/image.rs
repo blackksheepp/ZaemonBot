@@ -74,13 +74,13 @@ pub fn write_text(text: &str, position: &str, filename: &str) -> Result<String, 
 pub fn position_text(user: &u64, text: &str, pic: &str) -> Result<String, ()> {
     let filename = format!("temp/{0}-{1}.png", user, pic);
     let cd = current_dir().unwrap();
+	let from = cd.join(format!("templates/{0}.png", &pic));
+    let to = cd.join(&filename);
+	println!("is_file: {}", &from.is_file());
 	
-    match fs::copy(
-        cd.join(format!("templates/{0}.png", &pic)),
-        cd.join(&filename),
-    ) {
+    match fs::copy(&from, &to) {
         Ok(_) => {}
-        Err(e) => log::error!("[{}] Failed to copy File. Error: {}\nPath: {}", user, e, cd.join(format!("templates/{0}.png", &pic)).to_str().unwrap()),
+        Err(e) => log::error!("[{}] Failed to copy File. Error: {}\nFrom: {}\nTo: {}", user, e, &from.to_str().unwrap(), &to.to_str().unwrap()),
     }
     if let Some(dot) = text.find('.') {
         let (upper, bottom) = text.split_at(dot + 1);
