@@ -76,7 +76,13 @@ pub fn position_text(user: &u64, text: &str, pic: &str) -> Result<String, ()> {
     let cd = current_dir().unwrap();
 	let from = cd.join(format!("templates/{0}.png", &pic));
     let to = cd.join(&filename);
-	println!("is_file: {}", &from.is_file());
+
+	if !fs::metadata("temp").is_ok() {
+		match fs::create_dir("temp") {
+			Ok(_) => (),
+			Err(e) => log::error!("Error while creating temp/: {}", e)
+		}
+	}
 	
     match fs::copy(&from, &to) {
         Ok(_) => {}
