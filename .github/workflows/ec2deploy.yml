@@ -68,7 +68,7 @@ jobs:
           chmod 600 key.pem
 
 
-     - name: Stop running container
+      - name: Stop running container
         run: |
           ssh -o StrictHostKeyChecking=no -i key.pem ${{ env.AWS_HOST }} 'docker stop ${{ env.REPO }} || true'
           ssh -o StrictHostKeyChecking=no -i key.pem ${{ env.AWS_HOST }} 'docker rm ${{ env.REPO }} || true'
