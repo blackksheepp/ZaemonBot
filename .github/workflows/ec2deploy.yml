@@ -54,26 +54,31 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ env.DOCKERHUB_USERNAME }}
           password: ${{ env.DOCKERHUB_TOKEN }}
       
+
       - name: Set permissions for private key
         run: |
           echo "${{ env.AWS_PRIVATE_KEY }}" > key.pem
           chmod 600 key.pem
 
-      - name: Pull Docker Image
-        run: |
-          ssh -o StrictHostKeyChecking=no -i key.pem ${{ env.AWS_HOST }} 'docker rmi -f $(docker images ${{ env.DOCKERHUB_USERNAME }}/${{ env.REPO }} -aq) || true'
-          ssh -o StrictHostKeyChecking=no -i key.pem ${{ env.AWS_HOST }} 'docker pull ${{ env.DOCKERHUB_USERNAME }}/${{ env.REPO }}:latest'
 
-      - name: Stop running container
+     - name: Stop running container
         run: |
           ssh -o StrictHostKeyChecking=no -i key.pem ${{ env.AWS_HOST }} 'docker stop ${{ env.REPO }} || true'
           ssh -o StrictHostKeyChecking=no -i key.pem ${{ env.AWS_HOST }} 'docker rm ${{ env.REPO }} || true'
+          ssh -o StrictHostKeyChecking=no -i key.pem ${{ env.AWS_HOST }} 'docker rmi -f $(docker images ${{ env.DOCKERHUB_USERNAME }}/${{ env.REPO }} -aq) || true'
+
+
+      - name: Pull Docker Image
+        run: |
+          ssh -o StrictHostKeyChecking=no -i key.pem ${{ env.AWS_HOST }} 'docker pull ${{ env.DOCKERHUB_USERNAME }}/${{ env.REPO }}:latest'
+    
 
       - name: Run new container
         run: |
